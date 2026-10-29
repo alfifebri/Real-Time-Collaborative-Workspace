@@ -303,22 +303,6 @@ The application is intentionally split into two deployable services: the **Next.
 
 > `NEXT_PUBLIC_*` variables are inlined at build time, so redeploy after changing them.
 
-### WebSocket Gateway on Render or Railway
-
-1. Create a new **Web Service** from the same repository.
-2. Configure the service:
-   - **Build command:** `npm install && npx prisma generate`
-   - **Start command:** `npm start` (or `npx tsx server/ws.ts` for a gateway-only process)
-   - **Health check path:** `/health`
-3. Add the server-side environment variables:
-   - `DATABASE_URL`
-   - `DIRECT_URL`
-   - `AUTH_SECRET` (must match the frontend)
-   - `REDIS_URL`
-   - `WS_PORT` (use the port provided by the platform, or let the platform inject it)
-   - `NEXT_PUBLIC_APP_URL`
-4. Expose the service over TLS and set the frontend's `NEXT_PUBLIC_WS_URL` to `wss://<gateway-host>`.
-5. Ensure the platform supports WebSocket upgrades and long-lived connections. Disable request timeouts where applicable.
 
 ### Production Checklist
 
