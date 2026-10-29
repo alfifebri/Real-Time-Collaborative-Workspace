@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  COMMENTER
+  VIEWER
+}
+
+enum VersionKind {
+  MANUAL
+  AUTO
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  color        String    @default("#22D3EE")
+  avatarUrl    String?
+  title        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ownedWorkspaces     Workspace[]          @relation("WorkspaceOwner")
+  workspaceMembers    WorkspaceMember[]
+  documentPermissions DocumentPermission[]
+  comments            Comment[]
+  versions            Version[]
+  createdDocuments    Document[]           @relation("DocumentCreator")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String   @default("layers")
+  accent    String   @default("#22D3EE")
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner     User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   WorkspaceMember[]
+  documents Document[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        Role     @default(EDITOR)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  workspaceId String
+  parentId    String?
+  title       String   @default("Untitled")
+  icon        String   @default("file-text")
+  position    Int      @default(0)
+  isFavorite  Boolean  @default(false)
+  ydocState   Bytes?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User                 @relation("DocumentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  parent      Document?            @relation("DocumentTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Document[]           @relation("DocumentTree")
+  permissions DocumentPermission[]
+  comments    Comment[]
+  versions    Version[]
+
+  @@index([workspaceId])
+  @@index([parentId])
+}
+
+model DocumentPermission {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  role       Role
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id         String    @id @default(cuid())
+  documentId String
+  authorId   String
+  parentId   String?
+  body       String
+  quote      String    @default("")
+  anchorFrom Int?
+  anchorTo   Int?
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  document Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  @@index([documentId])
+  @@index([parentId])
+}
+
+model Version {
+  id          String      @id @default(cuid())
+  documentId  String
+  createdById String?
+  label       String
+  kind        VersionKind @default(MANUAL)
+  content     Json
+  ydocState   Bytes?
+  createdAt   DateTime    @default(now())
+
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([documentId, createdAt])
+}
