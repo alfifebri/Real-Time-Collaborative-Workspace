@@ -297,8 +297,8 @@ The application is intentionally split into two deployable services: the **Next.
    - `DIRECT_URL`
    - `AUTH_SECRET`
    - `REDIS_URL`
-   - `NEXT_PUBLIC_APP_URL` (your production Vercel URL)
-   - `NEXT_PUBLIC_WS_URL` (your deployed gateway URL, using `wss://`)
+   - `NEXT_PUBLIC_APP_URL`(https://real-time-collaborative-workspace-eta.vercel.app)
+   - `NEXT_PUBLIC_WS_URL` (`ws://localhost:1234` for local WS server, or leave default for single-node fallback mode)
 4. Deploy. Run `npx prisma migrate deploy` against the production database as part of your release process.
 
 > `NEXT_PUBLIC_*` variables are inlined at build time, so redeploy after changing them.
